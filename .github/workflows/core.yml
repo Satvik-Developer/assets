@@ -1,0 +1,69 @@
+name: Core
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  core_run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl wget unzip docker.io jq
+          
+          if [ ! -f cloudflared-linux-amd64.deb ]; then
+            wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          fi
+
+          sudo dpkg-divert --local --rename --add /usr/bin/mandb
+          echo -e '#!/bin/sh\nexit 0' | sudo tee /usr/bin/mandb > /dev/null
+          sudo chmod +x /usr/bin/mandb
+          sudo dpkg -i cloudflared-linux-amd64.deb
+
+          curl https://rclone.org/install.sh | sudo bash
+          docker pull vaultwarden/server:latest
+
+      - name: Run Vaultwarden
+        run: |
+          mkdir /vw-data
+          nohup docker run -d --name vaultwarden -v /vw-data/:/data/ -p 80:80 vaultwarden/server:latest > docker.log 2>&1 &
+          sleep 3
+          nohup cloudflared tunnel run --token ${{ secrets.CF_TOKEN }} > cf.log 2>&1 &
+
+      - name: Setup Rclone
+        run: |
+          mkdir -p ~/.config/rclone
+          echo "${{ secrets.RCLONE_CONF }}" > ~/.config/rclone/rclone.conf
+
+      - name: Keep it alive + Backup at timeout
+        run: |
+          echo "Timer started"
+          TIME=0
+          INTERVAL=60  # seconds
+          LIMIT=17940  # 4h59m to avoid hard 5h timeout
+
+          while [ $TIME -lt $LIMIT ]; do
+            sleep $INTERVAL
+            TIME=$((TIME+INTERVAL))
+            echo "Uptime: $((TIME/60)) minutes"
+          done
+
+          echo "==> Time limit reached. Backing up Vaultwarden..."
+
+          docker stop vaultwarden
+          docker rm vaultwarden
+
+          tar -czvf vw-backup.tar.gz -C /vw-data .
+
+          echo "==> Uploading backup to MEGA"
+          rclone copy vw-backup.tar.gz mega:vw-backups/
+
+          echo "==> Triggering next workflow..."
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/core.yml/dispatches \
+            -d '{"ref":"main"}'
+          echo "==> All done. Bye bye."
+     

@@ -31,8 +31,8 @@ jobs:
 
       - name: Run Vaultwarden
         run: |
-          mkdir /vw-data
-          nohup docker run -d --name vaultwarden -v /vw-data/:/data/ -p 80:80 vaultwarden/server:latest > docker.log 2>&1 &
+          mkdir -p ./vw-data
+          nohup docker run -d --name vaultwarden -v $(pwd)/vw-data:/data/ -p 80:80 vaultwarden/server:latest
           sleep 3
           nohup cloudflared tunnel run --token ${{ secrets.CF_TOKEN }} > cf.log 2>&1 &
 

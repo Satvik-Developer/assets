@@ -10,7 +10,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl wget unzip docker.io
+          sudo apt-get install -y curl wget unzip
 
           if [ ! -f cloudflared-linux-amd64.deb ]; then
             wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
@@ -27,6 +27,29 @@ jobs:
         run: |
           mkdir -p ~/.config/rclone
           echo "${{ secrets.RCLONE_CONF }}" > ~/.config/rclone/rclone.conf
+      - name: Install ttyd
+        run: |
+           if [ ! -f ttyd ]; then
+            wget https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 -O ttyd
+            chmod +x ttyd
+           fi
+           sudo mv ttyd /usr/local/bin/ttyd
+      - name: Install Scripts
+        run: |
+          wget -O vnc-setup.sh https://gist.githubusercontent.com/Satvik-Developer/e9d78ae783e84374705f86b728e73068/raw/7da11924be03c56a7b59b4e0981f735f6079a3cf/setup.sh # Script to run x11vnc, xfce and novnc, tunneled through cloudflared. The script is stored in a private gist. It also enables directory listing in the novnc directory it creates, essentially allowing a person to download files placed there.
+          chmod +x ./vnc-setup.sh 
+        
+      - name: Start ttyd and Cloudflared Tunnel
+        run: |
+          echo "[*] Starting ttyd on port 7681"
+          nohup ttyd -p 7681 --writable bash > ttyd.log 2>&1 &
+          for i in {1..10}; do
+            nc -z localhost 7681 && echo "✅ ttyd is up!" && break
+            echo "⏳ Waiting for ttyd... ($i)"
+            sleep 1
+          done
+          echo "[*] Starting Cloudflared tunnel"
+          cloudflared tunnel --url localhost:7681
 
       - name: Pull Navidrome Image
         run: |

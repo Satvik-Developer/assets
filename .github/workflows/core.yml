@@ -22,14 +22,12 @@ jobs:
           sudo dpkg -i cloudflared-linux-amd64.deb
 
           curl https://rclone.org/install.sh | sudo bash
-      - name: Install Docker the sane way
+      - name: Install Navidromr
         run: |
-          curl -fsSL https://get.docker.com -o get-docker.sh
-          sudo sh get-docker.sh
-          sudo usermod -aG docker $USER
+          
           docker pull vaultwarden/server:latest
 
-      - name: Run Vaultwarden
+      - name: Run navidrome
         run: |
           mkdir -p ./vw-data
           nohup docker run -d --name vaultwarden -v $(pwd)/vw-data:/data/ -p 80:80 vaultwarden/server:latest
@@ -56,8 +54,8 @@ jobs:
 
           echo "==> Time limit reached. Backing up Vaultwarden..."
 
-          docker stop vaultwarden
-          docker rm vaultwarden
+          docker stop navidrome
+          docker rm navidrome
 
           tar -czvf vw-backup.tar.gz -C /vw-data .
 

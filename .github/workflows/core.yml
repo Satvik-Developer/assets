@@ -10,8 +10,8 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl wget unzip
-          
+          sudo apt-get install -y curl wget unzip docker.io
+
           if [ ! -f cloudflared-linux-amd64.deb ]; then
             wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           fi
@@ -22,22 +22,29 @@ jobs:
           sudo dpkg -i cloudflared-linux-amd64.deb
 
           curl https://rclone.org/install.sh | sudo bash
-      - name: Install Navidromr
-        run: |
-          
-          docker pull vaultwarden/server:latest
-
-      - name: Run navidrome
-        run: |
-          mkdir -p ./vw-data
-          nohup docker run -d --name vaultwarden -v $(pwd)/vw-data:/data/ -p 80:80 vaultwarden/server:latest
-          sleep 3
-          nohup cloudflared tunnel run --token ${{ secrets.CF_TOKEN }} > cf.log 2>&1 &
 
       - name: Setup Rclone
         run: |
           mkdir -p ~/.config/rclone
           echo "${{ secrets.RCLONE_CONF }}" > ~/.config/rclone/rclone.conf
+
+      - name: Pull Navidrome Image
+        run: |
+          docker pull deluan/navidrome:latest
+
+      - name: Run Navidrome
+        run: |
+          mkdir -p ./navidrome-data ./navidrome-music
+          docker run -d --name navidrome \
+            -v $(pwd)/navidrome-data:/data \
+            -v $(pwd)/navidrome-music:/music \
+            -e ND_LOGLEVEL=info \
+            -e ND_SCANINTERVAL=1m \
+            -p 4533:4533 \
+            deluan/navidrome:latest
+          
+          sleep 3
+          nohup cloudflared tunnel run --token ${{ secrets.CF_TOKEN }} > cf.log 2>&1 &
 
       - name: Keep it alive + Backup at timeout
         run: |
@@ -52,15 +59,15 @@ jobs:
             echo "Uptime: $((TIME/60)) minutes"
           done
 
-          echo "==> Time limit reached. Backing up Vaultwarden..."
+          echo "==> Time limit reached. Backing up Navidrome..."
 
           docker stop navidrome
           docker rm navidrome
 
-          tar -czvf vw-backup.tar.gz -C /vw-data .
+          tar -czvf navidrome-backup.tar.gz -C ./navidrome-data . -C ./navidrome-music .
 
           echo "==> Uploading backup to MEGA"
-          rclone copy vw-backup.tar.gz mega:vw-backups/
+          rclone copy navidrome-backup.tar.gz mega:navidrome-backups/
 
           echo "==> Triggering next workflow..."
           curl -X POST \
@@ -68,5 +75,4 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.GH_PAT }}" \
             https://api.github.com/repos/${{ github.repository }}/actions/workflows/core.yml/dispatches \
             -d '{"ref":"main"}'
-          echo "==> All done. Bye bye."
-     
+          echo "==> All done. Navidrome out."

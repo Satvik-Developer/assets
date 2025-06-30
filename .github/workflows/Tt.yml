@@ -34,7 +34,7 @@ jobs:
       - name: Decompile with apktool
         run: |
           mkdir apktool-output
-          tools/apktool d app.apk -o apktool-output --force --no-src
+          tools/apktool d app.apk -o apktool-output --force
 
       - name: Upload decompiled files
         uses: actions/upload-artifact@v4

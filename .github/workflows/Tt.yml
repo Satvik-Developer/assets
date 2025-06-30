@@ -1,0 +1,44 @@
+name: Decompile APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  decompile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jdk wget unzip
+
+      - name: Download jadx and apktool
+        run: |
+          mkdir tools
+          wget -O tools/jadx.zip https://github.com/skylot/jadx/releases/download/v1.4.7/jadx-1.4.7.zip
+          unzip tools/jadx.zip -d tools/jadx
+
+          wget https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O tools/apktool
+          wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.9.3.jar -O tools/apktool.jar
+          chmod +x tools/apktool
+
+      - name: Decompile with jadx
+        run: |
+          mkdir jadx-output
+          tools/jadx/bin/jadx app.apk -d jadx-output
+
+      - name: Decompile with apktool
+        run: |
+          mkdir apktool-output
+          tools/apktool d app.apk -o apktool-output --force --no-src
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: decompiled-apk
+          path: |
+            jadx-output
+            apktool-output

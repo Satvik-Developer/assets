@@ -49,7 +49,7 @@ jobs:
             sleep 1
           done
           echo "[*] Starting Cloudflared tunnel"
-          nohup cloudflared tunnel run -- token ${{ secrets.CF_SSH}} > ll.log 2>&1 &
+          nohup cloudflared tunnel run --token ${{ secrets.CF_SSH}} > ll.log 2>&1 &
 
 
 

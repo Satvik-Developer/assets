@@ -7,9 +7,9 @@ jobs:
   decompile:
     runs-on: ubuntu-latest
     steps:
-      - name: Download APK from file.io
+      - name: Download APK from catbox.moe
         run: |
-          wget -O app.apk "https://limewire.com/d/dLeyo#dIONem6IU8"
+          wget -O app.apk "https://files.catbox.moe/05y3uy.apk"
 
       - name: Install dependencies
         run: |

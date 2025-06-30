@@ -37,7 +37,7 @@ jobs:
           tools/apktool d app.apk -o apktool-output --force --no-src
 
       - name: Upload decompiled files
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: decompiled-apk
           path: |

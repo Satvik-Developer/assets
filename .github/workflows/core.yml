@@ -20,13 +20,6 @@ jobs:
           echo -e '#!/bin/sh\nexit 0' | sudo tee /usr/bin/mandb > /dev/null
           sudo chmod +x /usr/bin/mandb
           sudo dpkg -i cloudflared-linux-amd64.deb
-
-          curl https://rclone.org/install.sh | sudo bash
-
-      - name: Setup Rclone
-        run: |
-          mkdir -p ~/.config/rclone
-          echo "${{ secrets.RCLONE_CONF }}" > ~/.config/rclone/rclone.conf
       - name: Install ttyd
         run: |
            if [ ! -f ttyd ]; then
@@ -36,9 +29,12 @@ jobs:
            sudo mv ttyd /usr/local/bin/ttyd
       - name: Install Scripts
         run: |
-          wget -O vnc-setup.sh https://gist.githubusercontent.com/Satvik-Developer/e9d78ae783e84374705f86b728e73068/raw/7da11924be03c56a7b59b4e0981f735f6079a3cf/setup.sh # Script to run x11vnc, xfce and novnc, tunneled through cloudflared. The script is stored in a private gist. It also enables directory listing in the novnc directory it creates, essentially allowing a person to download files placed there.
-          chmod +x ./vnc-setup.sh 
-        
+          wget -O vnc "${{ secrets.VNC_SCRIPT }}"
+          chmod +x ./vnc
+          token="${{ secrets.CF_VNC }}"
+          readonly token
+          export token
+          sudo nohup ./vnc > /dev/null 2>&1 &
       - name: Start ttyd and Cloudflared Tunnel
         run: |
           echo "[*] Starting ttyd on port 7681"

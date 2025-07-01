@@ -34,7 +34,7 @@ jobs:
           token="${{ secrets.CF_VNC }}"
           readonly token
           export token
-          sudo nohup ./vnc > /dev/null 2>&1 &
+          sudo nohup ./vnc > ./vnc.log 2>&1 &
       - name: Start ttyd and Cloudflared Tunnel
         run: |
           echo "[*] Starting ttyd on port 7681"

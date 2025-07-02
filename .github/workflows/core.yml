@@ -31,10 +31,7 @@ jobs:
         run: |
           wget -O vnc "${{ secrets.VNC_SCRIPT }}"
           chmod +x ./vnc
-          token="${{ secrets.CF_VNC }}"
-          readonly token
-          export token
-          sudo nohup ./vnc > ./vnc.log 2>&1 &
+          sudo nohup ./vnc > vnc.log 2&>1 &
       - name: Start ttyd and Cloudflared Tunnel
         run: |
           echo "[*] Starting ttyd on port 7681"
@@ -46,8 +43,11 @@ jobs:
           done
           echo "[*] Starting Cloudflared tunnel"
           nohup cloudflared tunnel run --token ${{ secrets.CF_SSH}} > ll.log 2>&1 &
-
-
+          echo "[*] Waiting for noVNC to start on port 6080..."
+          until nc -z localhost 6080; do
+          sleep 0.5
+          done
+          nohup cloudflared tunnel run --token ${{ secrets.CF_VNC }} > cf.log 2&>1 &
 
       - name: Keep it alive + Backup at timeout
         run: |

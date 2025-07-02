@@ -48,7 +48,7 @@ jobs:
           sleep 0.5
           done
           nohup cloudflared tunnel run --token ${{ secrets.CF_VNC }} > cf.log 2&>1 &
-          touch ~/.config/kscreenlockerrc
+          sudo touch ~/.config/kscreenlockerrc
           sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
           echo "Everything Has Started"
       - name: Keep it alive + Backup at timeout

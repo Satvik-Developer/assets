@@ -44,11 +44,13 @@ jobs:
           echo "[*] Starting Cloudflared tunnel"
           nohup cloudflared tunnel run --token ${{ secrets.CF_SSH}} > ll.log 2>&1 &
           echo "[*] Waiting for noVNC to start on port 6080..."
-          until nc -z localhost 6080; do
+          until nc -z localhost 5900; do
           sleep 0.5
           done
           nohup cloudflared tunnel run --token ${{ secrets.CF_VNC }} > cf.log 2&>1 &
-          sudo touch ~/.config/kscreenlockerrc
+          sudo mkdir -p ~/.config
+          sudo echo -e "[Daemon]\nAutolock=false\nLockOnResume=false" > ~/.config/kscreenlockerrc
+
           sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
           echo "Everything Has Started"
       - name: Keep it alive + Backup at timeout

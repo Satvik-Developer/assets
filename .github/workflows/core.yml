@@ -49,7 +49,7 @@ jobs:
           done
           nohup cloudflared tunnel run --token ${{ secrets.CF_VNC }} > cf.log 2&>1 &
           sudo mkdir -p ~/.config
-          sudo echo -e "[Daemon]\nAutolock=false\nLockOnResume=false" > ~/.config/kscreenlockerrc
+          sudo bash -c 'echo -e "[Daemon]\nAutolock=false\nLockOnResume=false" > ~/.config/kscreenlockerrc'
 
           sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
           echo "Everything Has Started"

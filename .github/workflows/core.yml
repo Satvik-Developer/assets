@@ -49,8 +49,10 @@ jobs:
           done
           
           echo "[*] Starting Cloudflared tunnel for ttyd"
-          nohup cloudflared tunnel run --token ${{ secrets.CF_SSH }} > ll.log 2>&1 &
-          
+          nohup cloudflared tunnel run --token ${{ secrets.CF_SSH }} > cf_ttyd.log 2>&1 &
+          echo "[*] Starting Cloudflared tunnel for ssh server"
+          sudo systemctl start ssh
+          nohup cloudflared tunnel run --token ${{ secrets.CF_SSH_SERVER}} > cf_ssh.log 2>&1 &
           echo "[*] Starting Cloudflared tunnel for VNC"
           until nc -z localhost 5900; do
             sleep 0.5

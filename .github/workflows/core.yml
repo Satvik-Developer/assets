@@ -30,14 +30,14 @@ jobs:
       - name: Install Scripts
         run: |
           # Install and run VNC
-          wget -O vnc "${{ secrets.VNC_SCRIPT }}"
+          wget -O vnc "${{ secrets.VNC_SCRIPT }}/vnc_script"
           chmod +x ./vnc
           sudo nohup ./vnc > vnc.log 2>&1 &
 
           # Download and start Filebrowser
           curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
           sudo mkdir -p /srv
-          sudo nohup ./filebrowser -r /srv -a 127.0.0.1 -p 8081 --no-auth > fb.log 2>&1 &
+          sudo nohup ./filebrowser -r . -p 8081 --username=none --password=none --noauth > fb.log 2>&1 &
       - name: Start ttyd and Cloudflared Tunnel
         run: |
           echo "[*] Starting ttyd on port 7681"

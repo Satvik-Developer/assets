@@ -37,7 +37,7 @@ jobs:
           # Download and start Filebrowser
           curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
           sudo mkdir -p /srv
-          sudo nohup filebrowser -r . -p 8081 --username=none --password=none --noauth > fb.log 2>&1 &
+          sudo nohup filebrowser -r / -p 8081 --noauth --scope /home/runner --initial-dir /home/runner > fb.log 2>&1 &
       - name: Start ttyd and Cloudflared Tunnel
         run: |
           echo "[*] Starting ttyd on port 7681"

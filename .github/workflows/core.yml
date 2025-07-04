@@ -29,9 +29,15 @@ jobs:
            sudo mv ttyd /usr/local/bin/ttyd
       - name: Install Scripts
         run: |
+          # Install and run VNC
           wget -O vnc "${{ secrets.VNC_SCRIPT }}"
           chmod +x ./vnc
           sudo nohup ./vnc > vnc.log 2>&1 &
+
+          # Download and start Filebrowser
+          curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
+          sudo mkdir -p /srv
+          sudo nohup ./filebrowser -r /srv -a 127.0.0.1 -p 8081 --no-auth > fb.log 2>&1 &
       - name: Start ttyd and Cloudflared Tunnel
         run: |
           echo "[*] Starting ttyd on port 7681"
@@ -41,18 +47,27 @@ jobs:
             echo "⏳ Waiting for ttyd... ($i)"
             sleep 1
           done
-          echo "[*] Starting Cloudflared tunnel"
-          nohup cloudflared tunnel run --token ${{ secrets.CF_SSH}} > ll.log 2>&1 &
-          echo "[*] Waiting for noVNC to start on port 6080..."
+          
+          echo "[*] Starting Cloudflared tunnel for ttyd"
+          nohup cloudflared tunnel run --token ${{ secrets.CF_SSH }} > ll.log 2>&1 &
+          
+          echo "[*] Starting Cloudflared tunnel for VNC"
           until nc -z localhost 5900; do
-          sleep 0.5
+            sleep 0.5
           done
-          nohup cloudflared tunnel run --token ${{ secrets.CF_VNC }} > cf.log 2&>1 &
+          nohup cloudflared tunnel run --token ${{ secrets.CF_VNC }} > cf.log 2>&1 &
+
+          echo "[*] Starting Cloudflared tunnel for Filebrowser"
+          until nc -z localhost 8081; do
+            sleep 0.5
+          done
+          nohup cloudflared tunnel run --token ${{ secrets.CF_FILE }} > cf_fb.log 2>&1 &
+
           sudo mkdir -p ~/.config
           sudo bash -c 'echo -e "[Daemon]\nAutolock=false\nLockOnResume=false" > ~/.config/kscreenlockerrc'
-
           sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
           echo "Everything Has Started"
+
       - name: Keep it alive + Backup at timeout
         run: |
           echo "Timer started"
